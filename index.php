@@ -63,6 +63,7 @@
  * Different environments will require different levels of error reporting.
  * By default development will show errors but testing and live will hide them.
  */
+ini_set("include_path", '/home/dinarko/php:' . ini_get("include_path") );
 switch (ENVIRONMENT)
 {
 	case 'development':
