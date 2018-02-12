@@ -6,7 +6,8 @@ class Backend extends CI_Controller {
 	public function __construct()
     {
         parent::__construct();
-    	$this->load->model('user_model');      
+    	$this->load->model('user_model');
+    	$this->load->model('company_model');      
     }
 
 	public function login()
@@ -88,6 +89,74 @@ class Backend extends CI_Controller {
         	exit();
         }
 
-        echo json_encode($users[0]);
+        $user = $users[0];
+        if ($user->company_profile_id == '-1') {
+        	$save_data['third_login_email'] = $third_email;
+        	$save_data['third_login_password'] = $third_password;
+        	$comp_id = $this->company_model->addCompany($save_data);
+        	$this->user_model->updateUser($userid, array(
+        		"company_profile_id"  => $comp_id
+        	));
+        	
+        	$comps = $this->company_model->getCompanyWhere(array(
+        		"com_id"  => $comp_id
+        	));
+
+			$return_val['code'] = 'success';
+        	$return_val['msg'] = $comps[0];
+        	echo json_encode($return_val);
+        	exit();
+        } else {
+        	$save_data['third_login_email'] = $third_email;
+        	$save_data['third_login_password'] = $third_password;
+        	$this->company_model->updateCompany($user->company_profile_id, $save_data);
+
+        	$comps = $this->company_model->getCompanyWhere(array(
+        		"com_id"  => $user->company_profile_id
+        	));
+
+			$return_val['code'] = 'success';
+        	$return_val['msg'] = $comps[0];
+        	echo json_encode($return_val);
+        	exit();
+        }
+	}
+
+	public function loadthirdpartyconf() {
+		$userid = $this->input->post('userId');
+		if ($userid == "") {
+			$return_val['code'] = 'error';
+        	$return_val['msg'] = 'Request Error!';
+        	echo json_encode($return_val);
+        	exit();
+		}
+
+		$users = $this->user_model->getUserWhere(array(
+        	'id' => $userid
+        ));
+
+        if (count($users) == 0){
+        	$return_val['code'] = 'error';
+        	$return_val['msg'] = 'User is not exist.';
+        	echo json_encode($return_val);
+        	exit();
+        }
+
+        $user = $users[0];
+     	if ($user->company_profile_id == '-1') {
+     		$return_val['code'] = 'error';
+        	$return_val['msg'] = 'Company Informantion is not exist.';
+        	echo json_encode($return_val);
+        	exit();
+     	}
+
+        $comps = $this->company_model->getCompanyWhere(array(
+    		"com_id"  => $user->company_profile_id
+    	));
+
+		$return_val['code'] = 'success';
+    	$return_val['msg'] = $comps[0];
+    	echo json_encode($return_val);
+    	exit();
 	}
 }
