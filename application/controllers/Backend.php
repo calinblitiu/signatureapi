@@ -84,10 +84,10 @@ class Backend extends CI_Controller {
         } else {
 
             if ($usertype == 'admin') {
-                $save_data['third_login_email'] = 'test@aecc.ca';
-                $save_data['third_login_password'] = 'Netsuite1234';
-                $save_data['third_account_id'] = 'TSTDRV1331860';
-                $save_data['nlauth_role'] = '3';
+                $save_data['third_login_email'] = '';
+                $save_data['third_login_password'] = '';
+                $save_data['third_account_id'] = '';
+                $save_data['nlauth_role'] = '';
                 $com_id = $this->company_model->addCompany($save_data);    
             }
             
@@ -246,9 +246,9 @@ class Backend extends CI_Controller {
 	public function do_upload(){
         $config['upload_path']          = './uploads/';
         $config['allowed_types']        = 'gif|jpg|png';
-        $config['max_size']             = 100;
-        $config['max_width']            = 1024;
-        $config['max_height']           = 768;
+        $config['max_size']             = 10000;
+        $config['max_width']            = 10240;
+        $config['max_height']           = 7680;
         $config['encrypt_name'] 		= TRUE;
 
         $this->load->library('upload', $config);
