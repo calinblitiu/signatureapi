@@ -39,8 +39,33 @@ class Backend extends CI_Controller {
 		$fullname 	= $this->input->post('fullname');
 		$email    	= $this->input->post('email');
         $password 	= $this->input->post('password');
+        $usertype   = $this->input->post('usertype');
+
+        $com_id = -1;
+        if ($usertype == 'driver') {
+            $companycode = $this->input->post('companycode');
+
+            if ($companycode == "") {
+                $return_val['code'] = 'error';
+                $return_val['msg'] = 'Request Error!';
+                echo json_encode($return_val);
+                exit();
+            }
+
+            $com_id = $companycode - 8000;
+            $company = $this->company_model->getCompanyWhere(array(
+                'com_id' => $com_id
+            ));
+
+            if (count($company) == 0) {
+                $return_val['code'] = 'error';
+                $return_val['msg'] = 'Please Input correct company code';
+                echo json_encode($return_val);
+                exit();
+            }
+        }
 		
-		if ($fullname == "" || $email == "" || $password == "") {
+		if ($fullname == "" || $email == "" || $password == "" || $usertype == "") {
 			$return_val['code'] = 'error';
         	$return_val['msg'] = 'Request Error!';
         	echo json_encode($return_val);
@@ -55,12 +80,26 @@ class Backend extends CI_Controller {
         	$return_val['code'] = 'error';
         	$return_val['msg'] = 'User is already exited! Please try again with another email.';
         	echo json_encode($return_val);
+            exit();               
         } else {
+
+            if ($usertype == 'admin') {
+                $save_data['third_login_email'] = 'test@aecc.ca';
+                $save_data['third_login_password'] = 'Netsuite1234';
+                $save_data['third_account_id'] = 'TSTDRV1331860';
+                $save_data['nlauth_role'] = '3';
+                $com_id = $this->company_model->addCompany($save_data);    
+            }
+            
+
         	$user_id = $this->user_model->addUser(array(
-        		'full_name'		=> $fullname,
-        		'login_email'	=> $email,
-        		'password' 		=> password_hash($password, PASSWORD_DEFAULT)
+        		'full_name'		     => $fullname,
+        		'login_email'	     => $email,
+                'type'               => $usertype,
+                'company_profile_id' => $com_id,
+        		'password' 		     => password_hash($password, PASSWORD_DEFAULT)
         	));
+
 
         	$this->login();
         }	
@@ -177,9 +216,23 @@ class Backend extends CI_Controller {
         	exit();
 		}
 
+        $users = $this->user_model->getUserWhere(array(
+            'type' => 'admin', 
+            'company_profile_id' => $com_id
+        ));
+
+        if (count($users) == 0)
+        {
+            $return_val['code'] = 'error';
+            $return_val['msg'] = 'There is not admin user.';
+            echo json_encode($return_val);
+            exit();   
+        }
+
 		$data["com_id"] = $com_id;
 		$data["order_id"] = $order_id;
 		$data["image_url"] = $url;
+        $data['admin_id'] = $users[0]->id;
 		$sig_id = $this->signature_model->addSignature($data);
 		if ($sig_id > 0) {
 			$return_val['code'] = 'success';
@@ -233,7 +286,7 @@ class Backend extends CI_Controller {
 
 		if (count($sigs) == 0) {
 			$return_val['code'] = 'error';
-        	$return_val['msg'] = 'There is not any signatures!';
+        	$return_val['msg'] = 'Please configure your account with NetSuite Bundle';
         	echo json_encode($return_val);
         	exit();
 		}
