@@ -112,6 +112,7 @@ class Backend extends CI_Controller {
 		$third_account_id = $this->input->post('accountId');
 		$nlauth_role = $this->input->post('role');
 		$script_id = $this->input->post('script_id');
+		$deploy_id = $this->input->post('deploy_id');
 		if ($userid == "" || $third_email == "" || $third_password == "" || $third_account_id == "" || $nlauth_role == "") {
 			$return_val['code'] = 'error';
         	$return_val['msg'] = 'Request Error!';
@@ -137,6 +138,7 @@ class Backend extends CI_Controller {
         	$save_data['third_account_id'] = $third_account_id;
 			$save_data['nlauth_role'] = $nlauth_role;
 			$save_data['script_id'] = $script_id;
+			$save_data['deploy_id'] = $deploy_id;
         	$comp_id = $this->company_model->addCompany($save_data);
         	$this->user_model->updateUser($userid, array(
         		"company_profile_id"  => $comp_id
@@ -156,6 +158,7 @@ class Backend extends CI_Controller {
         	$save_data['third_account_id'] = $third_account_id;
 			$save_data['nlauth_role'] = $nlauth_role;
 			$save_data['script_id'] = $script_id;
+			$save_data['deploy_id'] = $deploy_id;
         	$this->company_model->updateCompany($user->company_profile_id, $save_data);
 
         	$comps = $this->company_model->getCompanyWhere(array(
