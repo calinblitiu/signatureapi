@@ -54,3 +54,6 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 $route['backend/login'] = 'backend/login';
+
+$route['changepassword/(:any)'] = 'backend/viewforgotpassword/$1';
+$route['changepasswordpost'] = 'backend/changepasswordpost';

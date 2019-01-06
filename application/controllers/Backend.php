@@ -1,6 +1,9 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
 class Backend extends CI_Controller {
 	
 	public function __construct(){
@@ -304,5 +307,121 @@ class Backend extends CI_Controller {
     	$return_val['msg'] = $sigs;
     	echo json_encode($return_val);
     	exit();
-    }
+	}
+
+	public function forgotpassword() {
+		$email = $this->input->post('email');
+		if($email == "") {
+			$return_val['code'] = 'error';
+        	$return_val['msg'] = 'Please input email address';
+        	echo json_encode($return_val);
+        	exit();
+		}
+
+		$users = $this->user_model->getUserWhere(array("login_email"=> $email));
+		if (count($users) == 0) {
+			$return_val['code'] = 'error';
+        	$return_val['msg'] = 'There is not user with this eamil. Please try with another email.';
+        	echo json_encode($return_val);
+        	exit();
+		}
+		$user = $users[0];
+		$this->load->helper('string');
+		$random = random_string('alnum', 100);
+		
+		$update_data = array(
+			'forgotpassword_token' => $random
+		);
+
+		$isSent = $this->sendEmail($email, "Forget Password", base_url()."changepassword/". $random);
+
+		if($isSent) {
+			$this->user_model->updateUser($user->id, $update_data);
+			$return_val['code'] = 'success';
+        	$return_val['msg'] = 'Email is sent success!, Please check your mailbox.';
+        	echo json_encode($return_val);
+        	exit();
+		} else {
+			$return_val['code'] = 'error';
+        	$return_val['msg'] = "We can't send email to this email";
+        	echo json_encode($return_val);
+        	exit();
+		}
+		
+		
+	}
+
+	public function viewforgotpassword($token) {
+		if($token == "") {
+			echo "<h1>Token Invaild</h1>";
+			exit();
+		}
+
+		$users = $this->user_model->getUserWhere(array("forgotpassword_token" => $token));
+		if (count($users) == 0) {
+			echo "<h1>Token Invaild</h1>";
+			exit();
+		}
+		$data['user'] = $users[0];
+		$this->load->view('forgotpassword', $data);
+	}
+
+	public function changepasswordpost() {
+		$token = $this->input->post('token');
+		$password = $this->input->post('password');
+		$c_password = $this->input->post('c_password');
+
+		if($token == "") {
+			echo "<h1>Token Invaild</h1>";
+			exit();
+		}
+
+		$users = $this->user_model->getUserWhere(array("forgotpassword_token" => $token));
+		if (count($users) == 0) {
+			echo "<h1>Token Invaild</h1>";
+			exit();
+		}
+		
+		$data['user'] = $users[0];
+
+		if($password != $c_password) {
+			echo "<h1>Password must be matched!</h1>";
+			exit();
+		}
+
+		$updated_data['password'] = password_hash($password, PASSWORD_DEFAULT);
+		$updated_data['forgotpassword_token'] = '';
+		$this->user_model->updateUser($data['user']->id, $updated_data);
+		$this->load->view('successchangedpassword', $data);
+	}
+
+	private function sendEmail($to, $subject, $body){
+		$mail = new PHPMailer(true);                              // Passing `true` enables exceptions
+		try {
+			//Server settings
+			$mail->SMTPDebug = 0;                                 // Enable verbose debug output
+			$mail->isSMTP();                                      // Set mailer to use SMTP
+			$mail->Host = 'smtp.sparkpostmail.com';  // Specify main and backup SMTP servers
+			$mail->SMTPAuth = true;                               // Enable SMTP authentication
+			$mail->Username = 'SMTP_Injection';                 // SMTP username
+			$mail->Password = '2ce9c1bd49a94d584895481423d4beefc64b5f9f';                           // SMTP password
+			$mail->SMTPSecure = 'tls';                            // Enable TLS encryption, `ssl` also accepted
+			$mail->Port = 587;                                    // TCP port to connect to
+
+			//Recipients
+			$mail->setFrom('sales@aecc.ca', 'Sales');
+			$mail->addAddress($to, 'Sender');
+
+			//Content
+			$mail->isHTML(true);                                  // Set email format to HTML
+			$mail->Subject = $subject;
+			$mail->Body    = $body;
+			// $mail->AltBody = 'This is the body in plain text for non-HTML mail clients';
+
+			$mail->send();
+			return true;
+		} catch (Exception $e) {
+			return false;
+		}
+	}
 }
