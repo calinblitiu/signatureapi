@@ -18,7 +18,7 @@
     <div class="panel panel-primary">
       <div class="panel-heading"><?=$user->full_name?>, <?=$user->login_email?></div>
       <div class="panel-body">
-        <form action="/changepasswordpost" method="post">
+        <form action="<?=base_url()?>changepasswordpost" method="post">
             <div class="form-group">
                 <label for="pwd">Password:</label>
                 <input type="password" class="form-control" name="password" required>
